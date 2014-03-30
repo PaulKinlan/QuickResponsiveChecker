@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+  <head>
+   <meta name="viewport" content="width=device-width, initial-size=1">
+   <link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
+   
+   <style>
+     body {
+       font-family: 'Open Sans Condensed', sans-serif;
+       font-weight: 100;
+       margin: 0;
+       background-color: #C4EDF7;
+     }
+    
+     form {
+       width: 100%;
+       background-color: #E9563A;
+       padding: 10px 20px;
+       color: white;
+       font-size: 1em;
+       box-sizing: border-box;
+     }
+     
+     form h1 {
+       margin: 0;
+     }
+     
+     form input[type=url] {
+       font-size: 1.6em;
+       box-sizing: border-box;
+       border: none;
+       width: 90%;
+       outline: none;
+       margin-top: 10px;
+       margin-bottom: 10px;
+       padding-top: 10px;
+       padding-bottom: 10px;
+     }
+     
+     form input[type=submit] {
+       font-size: 1.6em;
+       box-sizing: border-box;
+       background-color: #3a8ee9;
+       width: 9%;
+       color: white;
+       border: none;
+       outline: none;
+       margin: 0;
+       margin-top: 10px;
+       margin-bottom: 10px;
+       padding-top: 10px;
+       padding-bottom: 10px;
+     }
+    
+     #images img {
+       padding: 2px;
+       margin: 3px;
+       background-color: rgba(0,0,0,0.2);
+     }
+   </style>
+   <script src="masonry.js"></script>
+   <script src="devices.js"></script>
+   <script>
+   
+     window.onload = function() {
+       
+        var addImage = function(name, width, height) { 
+          var portrait = new Image();
+          var landscape = new Image();
+          
+          var elements = []
+          if(height != "-" && height != "NA" && width != "-" && width != "NA" && width != 0 && height != 0) {
+        
+            var view = '&clipRect=%7B"top"%3A0%2C"left"%3A0%2C"width"%3A' + width + '%2C"height"%3A' + height + '%7D'
+            portrait.src = "http://localhost:3000/?url=" + encodeURIComponent(url.value) +"&width=" + width + "&height=" + height + view;
+            portrait.alt = name
+            portrait.width = width * scale;
+            portrait.height = height * scale;
+            portrait.title = name;
+            images.appendChild(portrait);
+            elements.push(portrait);
+          
+            var view = '&clipRect=%7B"top"%3A0%2C"left"%3A0%2C"width"%3A' + height + '%2C"height"%3A' + width + '%7D'
+            landscape.src = "http://localhost:3000/?url=" + encodeURIComponent(url.value) +"&width=" + height + "&height=" + width + view;
+            landscape.alt = name
+            landscape.height = width * scale;
+            landscape.width = height * scale;
+            landscape.title = name + " Landscape";
+            images.appendChild(landscape);
+            elements.push(landscape);
+          }
+          
+          return elements;
+        };
+       
+       
+        //+ Jonas Raoni Soares Silva
+        //@ http://jsfromhell.com/array/shuffle [v1.0]
+        function shuffle(o){ //v1.0
+            for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+            return o;
+        };
+       
+       var scale = 0.2;
+   
+       var urlform = document.getElementById("urlform");
+       var images = document.getElementById("images");
+       urlform.onsubmit = function(e) {
+         e.preventDefault();
+         var url = document.getElementById("url");
+         images.innerHTML = ""; // a hack
+         functionQueue = []
+         for(var i in devices) {
+           var queueItem = (function(device, delay) { 
+              return function(done) { setTimeout(function() {
+                
+                var elements = addImage(device["Device Name"], device["Portrait Width"], device["Landscape Width"]);
+                msnry.appended(elements);
+                var next = functionQueue.shift()
+                
+                if(next)
+                  next(done);
+                else
+                  done()
+              }, delay); };
+           })(devices[i], 1000);
+           functionQueue.push(queueItem);
+         }
+         
+         functionQueue = shuffle(functionQueue);
+         
+         // Start processing the queue
+         functionQueue[0](function() { msnry.layout(); });
+         
+         var msnry = new Masonry(images, {
+           "columnWidth": 10,
+           "transitionDuration": "0.2s",
+           "isFitWidth": false 
+         });
+       };
+     };
+   </script>
+
+  </head>
+  <body>
+    <form id="urlform">
+      <h1>Responsive Checker</h1>
+      <input type="url" id="url" placeholder="http://paul.kinlan.me">
+      <input type="submit" value="Go">
+    </form>
+
+    <div id="images">
+
+
+    </div>
+
+
+  </body>
+</html>
